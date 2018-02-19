@@ -1,0 +1,25 @@
+stages:
+    - build
+    - deploy
+
+build:
+  stage: build
+  image: docker:17.03
+  services:
+    - docker:dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - docker build --pull -t "$CI_REGISTRY_IMAGE" .
+    - docker push "$CI_REGISTRY_IMAGE"
+  only:
+    - master
+
+
+deploy:
+  stage: deploy
+  image: cdrx/rancher-gitlab-deploy
+  script:
+    - upgrade --environment production --stack bot --service bot --start-before-stopping --batch-size 1 --batch-interval 30
+  only:
+    - master
